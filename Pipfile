@@ -13,6 +13,7 @@ djangorestframework = "*"
 django-cors-headers = "*"
 celery = {extras = ["redis"],version = "*"}
 django-celery-email = "*"
+django-rest-passwordreset = "*"
 
 [requires]
 python_version = "3.8"

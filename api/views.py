@@ -1,7 +1,16 @@
-from rest_framework import viewsets, status
+from datetime import timedelta
+from django.utils import timezone
+from django.core.mail import EmailMultiAlternatives
+from django.dispatch import receiver
+from django.template.loader import render_to_string
+from django_rest_passwordreset.models import ResetPasswordToken, get_password_reset_token_expiry_time
+from django_rest_passwordreset.signals import reset_password_token_created
+from rest_framework import viewsets, status, parsers, renderers
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .tasks import send_email_task
 
 from main.models import Task
@@ -9,7 +18,64 @@ from .serializers import (
     TaskDetailSerializer,
     TaskListSerializer,
     TaskCreateSerializer,
+    CustomTokenSerializer,
 )
+
+
+class CustomPasswordResetView:
+    @receiver(reset_password_token_created)
+    def password_reset_token_created(sender, reset_password_token, *args, **kwargs):
+        context = {
+            'current_user': reset_password_token.user,
+            'username': reset_password_token.user.username,
+            'email': reset_password_token.user.email,
+            'reset_password_url': "{}/password-reset/{}".format('http://127.0.0.1:8000/', reset_password_token.key),
+            'site_name': 'example.com',
+            'site_domain': 'example.com'
+        }
+
+        email_html_message = render_to_string('email/user_reset_password.html', context)
+        email_plaintext_message = render_to_string('email/user_reset_password.txt', context)
+
+        msg = EmailMultiAlternatives(
+            "Password Reset for {}".format('example.com'),
+            email_plaintext_message,
+            "mrworld008@gmail.com",
+            [reset_password_token.user.email]
+        )
+        msg.attach_alternative(email_html_message, "text/html")
+        msg.send()
+
+
+class CustomPasswordTokenVerificationView(APIView):
+    throttle_classes = ()
+    permission_classes = ()
+    parser_classes = (parsers.FormParser, parsers.MultiPartParser, parsers.JSONParser,)
+    renderer_classes = (renderers.JSONRenderer,)
+    serializer_class = CustomTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token = serializer.validated_data['token']
+
+        password_reset_token_validation_time = get_password_reset_token_expiry_time()
+
+        reset_password_token = ResetPasswordToken.objects.filter(key=token).first()
+
+        if reset_password_token is None:
+            return Response({'status': 'invalid'}, status=status.HTTP_404_NOT_FOUND)
+
+        expiry_date = reset_password_token.created_at + timedelta(hours=password_reset_token_validation_time)
+
+        if timezone.now() > expiry_date:
+            reset_password_token.delete()
+            return Response({'status': 'expired'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not reset_password_token.user.has_usable_password():
+            return Response({'status': 'irrelevant'})
+
+        return Response({'status': 'OK'})
 
 
 class TaskViewSet(viewsets.ModelViewSet):

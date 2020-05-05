@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'rest_auth.registration',
     'djcelery_email',
+    'django_rest_passwordreset',
 ]
 
 REST_FRAMEWORK = {
