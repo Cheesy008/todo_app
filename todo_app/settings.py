@@ -164,6 +164,10 @@ AUTHENTICATION_BACKENDS = (
 
 AUTH_USER_MODEL = 'main.User'
 
+DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
+    "CLASS": "django_rest_passwordreset.tokens.RandomStringTokenGenerator"
+}
+
 # smtp
 
 CACHES = {

@@ -10,6 +10,7 @@ from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.urls import reverse
 
 from .tasks import send_email_task
 
@@ -29,7 +30,8 @@ class CustomPasswordResetView:
             'current_user': reset_password_token.user,
             'username': reset_password_token.user.username,
             'email': reset_password_token.user.email,
-            'reset_password_url': "{}/password-reset/{}".format('http://127.0.0.1:8000/', reset_password_token.key),
+            'reset_password_url': "{}?token={}".format(reverse('password_reset:reset-password-request'),
+                                                       reset_password_token.key),
             'site_name': 'example.com',
             'site_domain': 'example.com'
         }
@@ -45,37 +47,6 @@ class CustomPasswordResetView:
         )
         msg.attach_alternative(email_html_message, "text/html")
         msg.send()
-
-
-class CustomPasswordTokenVerificationView(APIView):
-    throttle_classes = ()
-    permission_classes = ()
-    parser_classes = (parsers.FormParser, parsers.MultiPartParser, parsers.JSONParser,)
-    renderer_classes = (renderers.JSONRenderer,)
-    serializer_class = CustomTokenSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        token = serializer.validated_data['token']
-
-        password_reset_token_validation_time = get_password_reset_token_expiry_time()
-
-        reset_password_token = ResetPasswordToken.objects.filter(key=token).first()
-
-        if reset_password_token is None:
-            return Response({'status': 'invalid'}, status=status.HTTP_404_NOT_FOUND)
-
-        expiry_date = reset_password_token.created_at + timedelta(hours=password_reset_token_validation_time)
-
-        if timezone.now() > expiry_date:
-            reset_password_token.delete()
-            return Response({'status': 'expired'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not reset_password_token.user.has_usable_password():
-            return Response({'status': 'irrelevant'})
-
-        return Response({'status': 'OK'})
 
 
 class TaskViewSet(viewsets.ModelViewSet):
