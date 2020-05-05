@@ -19,7 +19,6 @@ from .serializers import (
     TaskDetailSerializer,
     TaskListSerializer,
     TaskCreateSerializer,
-    CustomTokenSerializer,
 )
 
 
