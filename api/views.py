@@ -1,15 +1,11 @@
-from datetime import timedelta
-from django.utils import timezone
 from django.core.mail import EmailMultiAlternatives
 from django.dispatch import receiver
 from django.template.loader import render_to_string
-from django_rest_passwordreset.models import ResetPasswordToken, get_password_reset_token_expiry_time
 from django_rest_passwordreset.signals import reset_password_token_created
-from rest_framework import viewsets, status, parsers, renderers
+from rest_framework import viewsets, status
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.urls import reverse
 
 from .tasks import send_email_task
