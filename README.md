@@ -8,3 +8,4 @@
 4) api/todo/<int:pk>/execute - пометка задачи выполненной
 5) api/profile/login/ - авторизация 
 6) api/profile/logout/ - выход
+7) api/password_reset/ - сброс пароля
