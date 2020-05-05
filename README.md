@@ -7,3 +7,4 @@
 3) api/todo/<int:pk>/ - получение определенной задачи
 4) api/todo/<int:pk>/execute - пометка задачи выполненной
 5) api/profile/login/ - авторизация 
+6) api/profile/logout/ - выход
