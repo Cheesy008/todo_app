@@ -59,8 +59,17 @@ class TaskViewSet(viewsets.ModelViewSet):
         except (KeyError, AttributeError):
             return super().get_serializer_class()
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        user_email = self.request.user.email
+        if instance.is_done:
+            send_email_task.delay(user_email, 'Выполнено')
+        else:
+            send_email_task.delay(user_email, 'Не выполнено')
+
     @action(detail=True, methods=['get', 'post'], serializer_class=TaskDetailSerializer)
     def execute(self, request, pk=None):
         Task.objects.filter(pk=pk).update(is_done=True)
-        send_email_task.delay()
+        user_email = request.user.email
+        send_email_task.delay(user_email, 'Выполнено')
         return Response(status=status.HTTP_200_OK)
