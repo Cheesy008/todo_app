@@ -6,6 +6,7 @@ from celery import Celery
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'todo_app.settings')
+os.environ.setdefault('FORKED_BY_MULTIPROCESSING', '1')
 
 app = Celery('todo_app')
 
@@ -18,7 +19,3 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
-
-# @app.task(bind=True)
-# def debug_task(self):
-#     print('Request: {0!r}'.format(self.request))

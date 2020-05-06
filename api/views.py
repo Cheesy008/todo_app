@@ -62,5 +62,5 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get', 'post'], serializer_class=TaskDetailSerializer)
     def execute(self, request, pk=None):
         Task.objects.filter(pk=pk).update(is_done=True)
-        # send_email_task.delay()
+        send_email_task.delay()
         return Response(status=status.HTTP_200_OK)
